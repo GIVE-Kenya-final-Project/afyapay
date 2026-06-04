@@ -3,51 +3,101 @@
 use soroban_sdk::{
     contract,
     contractimpl,
+    contracttype,
+    symbol_short,
     Address,
     Env,
-    symbol_short,
-    Vec,
-    IntoVal,
 };
 
-#[contract]
-pub struct SettlementContract;
+#[derive(Clone)]
+#[contracttype]
+pub struct SettlementRecord {
+    pub token_id: u64,
+    pub claim_id: u64,
+    pub payer: Address,
+    pub payee: Address,
+    pub amount: i128,
+    pub settled_at: u64,
+}
 
-impl SettlementContract {
+#[derive(Clone)]
+#[contracttype]
+pub enum DataKey {
+    Settlement(u64),
+    Settled(u64),
+}
+
+#[contract]
+pub struct ClaimSettlementContract;
+
+#[contractimpl]
+impl ClaimSettlementContract {
 
     pub fn settle_claim(
         env: Env,
-        escrow: Address,
         token_id: u64,
         claim_id: u64,
-        insurer: Address,
+        payer: Address,
         payee: Address,
         amount: i128,
-        is_final: bool,
-    ) -> i128 {
+    ) {
+        payer.require_auth();
 
-        insurer.require_auth();
+        if amount <= 0 {
+            panic!("invalid amount");
+        }
 
-        let mut args = Vec::new(&env);
-        args.push_back(claim_id.into_val(&env));
-        args.push_back(payee.clone().into_val(&env));
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::Settled(token_id))
+        {
+            panic!("claim already settled");
+        }
 
-        let released: i128 = env.invoke_contract::<i128>(
-            &escrow,
-            &symbol_short!("release"),
-            args,
+        let record = SettlementRecord {
+            token_id,
+            claim_id,
+            payer: payer.clone(),
+            payee: payee.clone(),
+            amount,
+            settled_at: env.ledger().timestamp(),
+        };
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Settlement(token_id), &record);
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Settled(token_id), &true);
+
+        env.events().publish(
+            (symbol_short!("SETTLE"), token_id),
+            amount,
         );
+    }
 
-        if released < amount {
-            panic!("Insufficient escrow funds");
-        }
+    pub fn get_settlement(
+        env: Env,
+        token_id: u64,
+    ) -> SettlementRecord {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Settlement(token_id))
+            .unwrap()
+    }
 
-        if is_final {
-            env.storage().persistent().set(&claim_id, &true);
-        }
-
-        amount
+    pub fn is_settled(
+        env: Env,
+        token_id: u64,
+    ) -> bool {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Settled(token_id))
+            .unwrap_or(false)
     }
 }
+
 #[cfg(test)]
 mod test;

@@ -1,91 +1,116 @@
-#![cfg(test)]
-
-use super::*;
+extern crate std;
 
 use soroban_sdk::{
     testutils::Address as _,
     Address,
     Env,
 };
-use crate::{EscrowContract, SettlementContract};
+
+use crate::{
+    ClaimSettlementContract,
+    ClaimSettlementContractClient,
+};
+
 #[test]
-fn test_full_settlement() {
-
+fn test_settle_claim() {
     let env = Env::default();
-    env.mock_all_auths();
 
-    let escrow_id =
-        env.register(EscrowContract, ());
+    let contract_id = env.register(ClaimSettlementContract, ());
+    let client = ClaimSettlementContractClient::new(
+        &env,
+        &contract_id,
+    );
 
-    let escrow =
-        EscrowContractClient::new(&env, &escrow_id);
-
-    let settlement_id =
-        env.register(SettlementContract, ());
-
-    let settlement =
-        ClaimSettlementContractClient::new(
-            &env,
-            &settlement_id,
-        );
-
-    let insurer = Address::generate(&env);
+    let payer = Address::generate(&env);
     let payee = Address::generate(&env);
 
-    // fund escrow
-    escrow.deposit(&insurer, &10_000);
+    client.settle_claim(
+        &1,
+        &100,
+        &payer,
+        &payee,
+        &5000,
+    );
 
-    escrow.lock_funds(&insurer, &1, &5_000);
+    let record = client.get_settlement(&1);
 
-    // simulate settlement logic
-    let amount = escrow.release(&1, &payee);
+    assert_eq!(record.token_id, 1);
+    assert_eq!(record.claim_id, 100);
+    assert_eq!(record.amount, 5000);
+    assert_eq!(record.payer, payer);
+    assert_eq!(record.payee, payee);
 
-    assert_eq!(amount, 5_000);
+    let settled = client.is_settled(&1);
+
+    assert!(settled);
 }
+
 #[test]
-fn test_partial_settlement_flow() {
-
+fn test_is_settled_before_settlement() {
     let env = Env::default();
-    env.mock_all_auths();
 
-    let escrow_id =
-        env.register(EscrowContract, ());
+    let contract_id = env.register(ClaimSettlementContract, ());
+    let client = ClaimSettlementContractClient::new(
+        &env,
+        &contract_id,
+    );
 
-    let escrow =
-        EscrowContractClient::new(&env, &escrow_id);
-
-    let insurer = Address::generate(&env);
-    let payee = Address::generate(&env);
-
-    escrow.deposit(&insurer, &10_000);
-
-    // first partial payout
-    escrow.lock_funds(&insurer, &1, &3_000);
-
-    let first = escrow.release(&1, &payee);
-    assert_eq!(first, 3_000);
-
-    // second partial payout
-    escrow.lock_funds(&insurer, &2, &2_000);
-
-    let second = escrow.release(&2, &payee);
-    assert_eq!(second, 2_000);
+    assert_eq!(
+        client.is_settled(&1),
+        false
+    );
 }
+
 #[test]
-#[should_panic]
-fn test_settlement_without_funds() {
-
+#[should_panic(expected = "claim already settled")]
+fn test_prevent_double_settlement() {
     let env = Env::default();
-    env.mock_all_auths();
 
-    let escrow_id =
-        env.register(EscrowContract, ());
+    let contract_id = env.register(ClaimSettlementContract, ());
+    let client = ClaimSettlementContractClient::new(
+        &env,
+        &contract_id,
+    );
 
-    let escrow =
-        EscrowContractClient::new(&env, &escrow_id);
-
+    let payer = Address::generate(&env);
     let payee = Address::generate(&env);
 
-    // no deposit → should fail
-    escrow.release(&1, &payee);
+    client.settle_claim(
+        &1,
+        &100,
+        &payer,
+        &payee,
+        &5000,
+    );
+
+    client.settle_claim(
+        &1,
+        &100,
+        &payer,
+        &payee,
+        &5000,
+    );
+}
+
+#[test]
+#[should_panic(expected = "invalid amount")]
+fn test_invalid_amount() {
+    let env = Env::default();
+
+    let contract_id = env.register(ClaimSettlementContract, ());
+    let client = ClaimSettlementContractClient::new(
+        &env,
+        &contract_id,
+    );
+
+    let payer = Address::generate(&env);
+    let payee = Address::generate(&env);
+
+    client.settle_claim(
+        &1,
+        &100,
+        &payer,
+        &payee,
+        &0,
+    );
 }
