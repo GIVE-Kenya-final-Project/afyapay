@@ -1,23 +1,53 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, vec, Env, String, Vec};
+
+use soroban_sdk::{
+    contract,
+    contractimpl,
+    Address,
+    Env,
+    symbol_short,
+    Vec,
+    IntoVal,
+};
 
 #[contract]
-pub struct Contract;
+pub struct SettlementContract;
 
-// This is a sample contract. Replace this placeholder with your own contract logic.
-// A corresponding test example is available in `test.rs`.
-//
-// For comprehensive examples, visit <https://github.com/stellar/soroban-examples>.
-// The repository includes use cases for the Stellar ecosystem, such as data storage on
-// the blockchain, token swaps, liquidity pools, and more.
-//
-// Refer to the official documentation:
-// <https://developers.stellar.org/docs/build/smart-contracts/overview>.
-#[contractimpl]
-impl Contract {
-    pub fn hello(env: Env, to: String) -> Vec<String> {
-        vec![&env, String::from_str(&env, "Hello"), to]
+impl SettlementContract {
+
+    pub fn settle_claim(
+        env: Env,
+        escrow: Address,
+        token_id: u64,
+        claim_id: u64,
+        insurer: Address,
+        payee: Address,
+        amount: i128,
+        is_final: bool,
+    ) -> i128 {
+
+        insurer.require_auth();
+
+        let mut args = Vec::new(&env);
+        args.push_back(claim_id.into_val(&env));
+        args.push_back(payee.clone().into_val(&env));
+
+        let released: i128 = env.invoke_contract::<i128>(
+            &escrow,
+            &symbol_short!("release"),
+            args,
+        );
+
+        if released < amount {
+            panic!("Insufficient escrow funds");
+        }
+
+        if is_final {
+            env.storage().persistent().set(&claim_id, &true);
+        }
+
+        amount
     }
 }
-
+#[cfg(test)]
 mod test;
