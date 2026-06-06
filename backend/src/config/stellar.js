@@ -1,19 +1,6 @@
-const {
-  SorobanRpc,
-  Networks,
-  Keypair,
-} = require("@stellar/stellar-sdk");
-
-const server = new SorobanRpc.Server(
-  process.env.STELLAR_RPC_URL
-);
-
-const adminKeypair = Keypair.fromSecret(
-  process.env.ADMIN_SECRET_KEY
-);
-
-module.exports = {
-  server,
-  adminKeypair,
-  networkPassphrase: process.env.NETWORK_PASSPHRASE,
+export const CONTRACTS = {
+  registration: process.env.REGISTRATION_CONTRACT_ID,
+  registry: process.env.CLAIM_REGISTRY_CONTRACT_ID,
+  tokenization: process.env.TOKENIZATION_CONTRACT_ID,
+  settlement: process.env.SETTLEMENT_CONTRACT_ID
 };

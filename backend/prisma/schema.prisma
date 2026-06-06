@@ -8,36 +8,49 @@ datasource db {
 }
 
 model User {
-  id        String @id @default(uuid())
-  name      String
-  email     String @unique
-  password  String
-  role      String
-  wallet    String
-  createdAt DateTime @default(now())
-}
+  id          String @id @default(cuid())
 
-model Claim {
-  id          String   @id
-  hospital    String
-  insurer     String
-  amount      Float
-  status      String
-  txHash      String?
+  wallet      String @unique
+
+  role        String
+
   createdAt   DateTime @default(now())
 }
 
+model Claim {
+  id              Int @id @default(autoincrement())
+
+  blockchainId    Int
+
+  hospitalWallet  String
+
+  insurerWallet   String
+
+  amount          Float
+
+  status          String
+
+  createdAt       DateTime @default(now())
+}
+
 model ClaimToken {
-  id          String @id
-  claimId     String
-  ownerWallet String
-  value       Float
+  id        Int @id @default(autoincrement())
+
+  tokenId   Int
+
+  claimId   Int
+
+  owner     String
 }
 
 model Settlement {
-  id               String @id
-  claimId          String
-  recipientWallet  String
-  amount           Float
-  txHash           String
+  id        Int @id @default(autoincrement())
+
+  tokenId   Int
+
+  amount    Float
+
+  payer     String
+
+  payee     String
 }

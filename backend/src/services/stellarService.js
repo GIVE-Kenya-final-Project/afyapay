@@ -1,44 +1,101 @@
-const {
-  TransactionBuilder,
-  BASE_FEE,
-  Contract,
-  Networks,
-} = require("@stellar/stellar-sdk");
+/*registerUser()
 
-const {
-  server,
-  adminKeypair,
-  networkPassphrase,
-} = require("../config/stellar");
+createClaim()
 
-async function invokeContract(contractId, method, args = []) {
-  const sourceAccount = await server.getAccount(
-    adminKeypair.publicKey()
-  );
+approveClaim()
 
-  const contract = new Contract(contractId);
+rejectClaim()
 
-  let tx = new TransactionBuilder(sourceAccount, {
-    fee: BASE_FEE,
-    networkPassphrase,
-  })
-    .addOperation(
-      contract.call(method, ...args)
-    )
-    .setTimeout(30)
-    .build();
+tokenizeClaim()
 
-  tx.sign(adminKeypair);
+transferToken()
 
-  const prepared = await server.prepareTransaction(tx);
+settleClaim()*/
+import { exec } from "child_process";
+import util from "util";
 
-  const response = await server.sendTransaction(
-    prepared
-  );
+const execAsync = util.promisify(exec);
 
-  return response;
+class StellarService {
+  async run(command) {
+    try {
+      const { stdout } = await execAsync(command);
+      return stdout.trim();
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getHospitalAddress() {
+    return this.run(
+      "stellar keys address hospital"
+    );
+  }
 }
+async getAddress(identity) {
+  const cmd = `stellar keys address ${identity}`;
+  return this.run(cmd);
+}
+async registerUser(
+  userAddress,
+  role,
+  name
+) {
+  const adminAddress =
+    await this.getAddress("admin");
 
-module.exports = {
-  invokeContract,
-};
+  const cmd = `
+    stellar contract invoke \
+    --id ${CONTRACTS.registration} \
+    --source admin \
+    --network ${NETWORK} \
+    -- register_user \
+    --caller ${adminAddress} \
+    --user ${userAddress} \
+    --role ${role} \
+    --name "${name}"
+  `;
+
+  return this.run(cmd);
+}
+async getUser(userAddress) {
+  const cmd = `
+    stellar contract invoke \
+    --id ${CONTRACTS.registration} \
+    --source admin \
+    --network ${NETWORK} \
+    -- get_user \
+    --user ${userAddress}
+  `;
+
+  return this.run(cmd);
+}
+async getRole(userAddress) {
+  const cmd = `
+    stellar contract invoke \
+    --id ${CONTRACTS.registration} \
+    --source admin \
+    --network ${NETWORK} \
+    -- get_role \
+    --user ${userAddress}
+  `;
+
+  return this.run(cmd);
+}
+async deactivateUser(userAddress) {
+  const adminAddress =
+    await this.getAddress("admin");
+
+  const cmd = `
+    stellar contract invoke \
+    --id ${CONTRACTS.registration} \
+    --source admin \
+    --network ${NETWORK} \
+    -- deactivate_user \
+    --caller ${adminAddress} \
+    --user ${userAddress}
+  `;
+
+  return this.run(cmd);
+}
+export default new StellarService();
