@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String @id @default(uuid())
+  name      String
+  email     String @unique
+  password  String
+  role      String
+  wallet    String
+  createdAt DateTime @default(now())
+}
+
+model Claim {
+  id          String   @id
+  hospital    String
+  insurer     String
+  amount      Float
+  status      String
+  txHash      String?
+  createdAt   DateTime @default(now())
+}
+
+model ClaimToken {
+  id          String @id
+  claimId     String
+  ownerWallet String
+  value       Float
+}
+
+model Settlement {
+  id               String @id
+  claimId          String
+  recipientWallet  String
+  amount           Float
+  txHash           String
+}
