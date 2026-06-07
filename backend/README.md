@@ -80,3 +80,16 @@ Insurer settles claim
 Backend calls settle_claim()
         ↓
 Investor receives payment
+
+the registration endpoint -http://localhost:5000/api/auth/register with the body; {
+  "wallet":"address of user to be registered",
+  "role":"Hospital",
+  "name":"Nairobi Hospital"
+} returns; {
+    "success": true,
+    "data": ""
+}
+the get api - http://localhost:5000/api/auth/users/adress of user registered returns: {
+    "success": true,
+    "data": ""
+}

@@ -1,13 +1,17 @@
-function authorize(...roles) {
+const roleMiddleware = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+
+    if (
+      !roles.includes(req.user.role)
+    ) {
       return res.status(403).json({
-        message: "Forbidden",
+        success: false,
+        message: "Access denied",
       });
     }
 
     next();
   };
-}
+};
 
-module.exports = authorize;
+export default roleMiddleware;

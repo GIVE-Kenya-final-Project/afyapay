@@ -4,17 +4,18 @@ class AuthController {
 
   async register(req, res) {
     try {
-      const { wallet, role } = req.body;
+      const { wallet, role, name } = req.body;
 
       const result =
         await registrationService.registerUser(
           wallet,
-          role
+          role, 
+          name
         );
 
       res.status(201).json({
         success: true,
-        data: result,
+        message: "User registered successfully",
       });
 
     } catch (error) {
@@ -46,6 +47,7 @@ class AuthController {
       res.status(500).json({
         success: false,
         message: error.message,
+        data:user,
       });
 
     }
