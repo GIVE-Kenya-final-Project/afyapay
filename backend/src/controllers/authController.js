@@ -1,57 +1,32 @@
-import registrationService from "../services/registrationService.js";
+import generateToken from "../utils/generateToken.js";
+import prisma from "../../prisma/client.js";
 
-class AuthController {
+// LOGIN (wallet-based)
+export const login = async (req, res) => {
+  try {
+    const { wallet } = req.body;
 
-  async register(req, res) {
-    try {
-      const { wallet, role, name } = req.body;
-
-      const result =
-        await registrationService.registerUser(
-          wallet,
-          role, 
-          name
-        );
-
-      res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-      });
-
-    } catch (error) {
-
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
-
+    if (!wallet) {
+      return res.status(400).json({ message: "Wallet required" });
     }
-  }
 
-  async getUser(req, res) {
+    // Check if user exists in DB
+    const user = await prisma.user.findUnique({
+      where: { wallet },
+    });
 
-    try {
-
-      const { wallet } = req.params;
-
-      const user =
-        await registrationService.getUser(wallet);
-
-      res.json({
-        success: true,
-        data: user,
-      });
-
-    } catch (error) {
-
-      res.status(500).json({
-        success: false,
-        message: error.message,
-        data:user,
-      });
-
+    if (!user) {
+      return res.status(404).json({ message: "User not registered" });
     }
-  }
-}
 
-export default new AuthController();
+    const token = generateToken(user);
+
+    return res.json({
+      message: "Login successful",
+      token,
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};

@@ -1,21 +1,21 @@
 import express from "express";
-import stellarService from "../services/stellarService.js";
+import prisma from "../../prisma/client.js";
 
 const router = express.Router();
 
-router.get("/hospital-address", async (req, res) => {
+router.get("/db", async (req, res) => {
   try {
-    const address =
-      await stellarService.getHospitalAddress();
+    const users = await prisma.user.findMany();
 
     res.json({
       success: true,
-      address,
+      count: users.length,
+      users,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      error: error.message,
     });
   }
 });

@@ -1,32 +1,59 @@
-const prisma = require("../utils/prisma");
-const { invokeContract } = require("./stellarService");
+import stellarService from "./stellarService.js";
+import prisma from "../../prisma/client.js";
+export const createClaim = async (data) => {
+  const { hospitalWallet, insurerWallet, amount, sourceAccount } = data;
 
-async function createClaim(data) {
-  const response = await invokeContract(
-    process.env.CLAIM_REGISTRY_CONTRACT,
-    "create_claim",
-    [
-      data.claimId,
-      data.hospitalWallet,
-      data.insurerWallet,
-      data.amount,
-    ]
-  );
+  // 1. Call blockchain
+  const blockchainClaimId = await stellarService.createClaim({
+    hospitalWallet,
+    insurerWallet,
+    amount,
+    sourceAccount,
+  });
 
+  // 2. Save to DB
   const claim = await prisma.claim.create({
     data: {
-      id: data.claimId,
-      hospital: data.hospitalWallet,
-      insurer: data.insurerWallet,
-      amount: data.amount,
+      blockchainId: Number(blockchainClaimId),
+      hospitalWallet,
+      insurerWallet,
+      amount,
       status: "PENDING",
-      txHash: response.hash,
     },
   });
 
   return claim;
-}
+};
+export const getClaim = async (claimId) => {
+  return await stellarService.getClaim({ claimId });
+};
+export const approveClaim = async ({ claimId, sourceAccount }) => {
 
-module.exports = {
-  createClaim,
+  // 1. Blockchain update
+  await stellarService.approveClaim({
+    claimId,
+    sourceAccount,
+  });
+
+  // 2. Update DB
+  await prisma.claim.update({
+    where: { blockchainId: Number(claimId) },
+    data: { status: "APPROVED" },
+  });
+
+  return { success: true };
+};
+export const rejectClaim = async ({ claimId, sourceAccount }) => {
+
+  await stellarService.rejectClaim({
+    claimId,
+    sourceAccount,
+  });
+
+  await prisma.claim.update({
+    where: { blockchainId: Number(claimId) },
+    data: { status: "REJECTED" },
+  });
+
+  return { success: true };
 };

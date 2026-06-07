@@ -1,9 +1,14 @@
-const router = require("express").Router();
+import express from "express";
+import {
+  createClaimController,
+  approveClaimController,
+  rejectClaimController,
+} from "../controllers/claimController.js";
 
-const {
-  createClaim,
-} = require("../controllers/claimController");
+const router = express.Router();
 
-router.post("/", createClaim);
+router.post("/create", createClaimController);
+router.post("/:id/approve", approveClaimController);
+router.post("/:id/reject", rejectClaimController);
 
-module.exports = router;
+export default router;
