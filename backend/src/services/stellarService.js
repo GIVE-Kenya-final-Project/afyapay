@@ -17,7 +17,7 @@ class StellarService {
         console.log(stderr);
       }
 
-      return stdout.trim();
+      return stdout.trim() || stderr.trim();
     } catch (error) {
       console.error(error);
       throw new Error(error.message);

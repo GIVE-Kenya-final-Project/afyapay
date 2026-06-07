@@ -1,0 +1,161 @@
+{
+  "info": {
+    "name": "AfyaPay Backend Flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://localhost:5000" }
+  ],
+  "item": [
+    {
+      "name": "Login Hospital",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"wallet\": \"G_HOSPITAL_ADDR...\"\n}" },
+        "url": { "raw": "{{BASE_URL}}/api/auth/login" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const data = pm.response.json();",
+              "  pm.collectionVariables.set('HOSPITAL_TOKEN', data.token);",
+              "  pm.collectionVariables.set('AUTH_TOKEN', data.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Insurer",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"wallet\": \"G_INSURER_ADDR...\"\n}" },
+        "url": { "raw": "{{BASE_URL}}/api/auth/login" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const data = pm.response.json();",
+              "  pm.collectionVariables.set('INSURER_TOKEN', data.token);",
+              "  pm.collectionVariables.set('AUTH_TOKEN', data.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Investor",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"wallet\": \"GINVESTOR_ADDR...\"\n}" },
+        "url": { "raw": "{{BASE_URL}}/api/auth/login" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const data = pm.response.json();",
+              "  pm.collectionVariables.set('INVESTOR_TOKEN', data.token);",
+              "  pm.collectionVariables.set('AUTH_TOKEN', data.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Register Hospital",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"wallet\": \"G_HOSPITAL_ADDR...\",\n  \"role\": \"Hospital\",\n  \"name\": \"City Hospital\"\n}"
+        },
+        "url": { "raw": "{{BASE_URL}}/api/auth/register" }
+      }
+    },
+    {
+      "name": "Register Insurer",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"wallet\": \"G_INSURER_ADDR...\",\n  \"role\": \"Insurer\",\n  \"name\": \"Acme Insurer\"\n}" },
+        "url": { "raw": "{{BASE_URL}}/api/auth/register" }
+      }
+    },
+    {
+      "name": "Hospital Create Claim",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{HOSPITAL_TOKEN}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"hospitalWallet\": \"G_HOSPITAL_ADDR...\",\n  \"insurerWallet\": \"G_INSURER_ADDR...\",\n  \"amount\": 1000\n}" },
+        "url": { "raw": "{{BASE_URL}}/api/claims/create" }
+      }
+    },
+    {
+      "name": "Insurer Approve Claim",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{INSURER_TOKEN}}" } ],
+        "body": { "mode": "raw", "raw": "{ \"sourceAccount\": \"insurer\" }" },
+        "url": { "raw": "{{BASE_URL}}/api/claims/1/approve" }
+      }
+    },
+    {
+      "name": "Investor Purchase Token",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{INVESTOR_TOKEN}}" } ],
+        "body": { "mode": "raw", "raw": "{ \"tokenId\": 1, \"newOwner\": \"GINVESTOR_ADDR...\", \"sourceAccount\": \"investor\" }" },
+        "url": { "raw": "{{BASE_URL}}/api/marketplace/purchase" }
+      }
+    },
+    {
+      "name": "Insurer Settle Claim",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{INSURER_TOKEN}}" } ],
+        "body": { "mode": "raw", "raw": "{ \"tokenId\": 1, \"claimId\": 1, \"payer\": \"G_INSURER_ADDR...\", \"payee\": \"GINVESTOR_ADDR...\", \"amount\": 1000 }" },
+        "url": { "raw": "{{BASE_URL}}/api/settlements" }
+      }
+    }
+    ,
+    {
+      "name": "Check Tokenization Failures",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{INSURER_TOKEN}}" } ],
+        "url": { "raw": "{{BASE_URL}}/api/marketplace/failures" }
+      }
+    }
+    ,
+    {
+      "name": "Retry Failed Tokenizations",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{INSURER_TOKEN}}" } ],
+        "body": { "mode": "raw", "raw": "{ \"limit\": 5 }" },
+        "url": { "raw": "{{BASE_URL}}/api/marketplace/retry" }
+      }
+    }
+  ]
+}

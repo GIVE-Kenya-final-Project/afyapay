@@ -1,8 +1,11 @@
 import jwt from "jsonwebtoken";
 
-const generateToken = (payload) => {
+const generateToken = (user) => {
   return jwt.sign(
-    payload,
+    {
+      wallet: user.wallet,
+      role: user.role,
+    },
     process.env.JWT_SECRET,
     {
       expiresIn: "7d",

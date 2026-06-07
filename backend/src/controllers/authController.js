@@ -1,7 +1,37 @@
 import generateToken from "../utils/generateToken.js";
 import prisma from "../../prisma/client.js";
+import registrationService from "../services/registrationService.js";
 
-// LOGIN (wallet-based)
+export const register = async (req, res) => {
+  try {
+    const { wallet, role, name } = req.body;
+
+    if (!wallet || !role || !name) {
+      return res.status(400).json({ message: "wallet, role, and name are required" });
+    }
+
+    // register on-chain
+    await registrationService.registerUser(wallet, role, name);
+
+    // save in DB
+    const user = await prisma.user.create({
+      data: {
+        wallet,
+        role,
+        name,
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const login = async (req, res) => {
   try {
     const { wallet } = req.body;
@@ -10,7 +40,6 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Wallet required" });
     }
 
-    // Check if user exists in DB
     const user = await prisma.user.findUnique({
       where: { wallet },
     });
@@ -19,7 +48,10 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: "User not registered" });
     }
 
-    const token = generateToken(user);
+    const token = generateToken({
+      wallet: user.wallet,
+      role: user.role,
+    });
 
     return res.json({
       message: "Login successful",
