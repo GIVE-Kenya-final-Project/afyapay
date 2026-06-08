@@ -46,11 +46,11 @@ export const approveClaimController = async (req, res) => {
       token = await tokenService.tokenizeClaimService({
   claimId: Number(updatedClaim.blockchainId),
   owner: updatedClaim.hospitalWallet,
-  userWallet: updatedClaim.hospitalWallet,
+  userWallet: "hospital",
 });
     }
 
-    res.json({ approval: updatedClaim, token });
+    res.json(serializeBigInts({ approval: updatedClaim, token }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -62,7 +62,7 @@ export const rejectClaimController = async (req, res) => {
       sourceAccount: req.body.sourceAccount,
     });
 
-    res.json(result);
+    res.json(serializeBigInts(result));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

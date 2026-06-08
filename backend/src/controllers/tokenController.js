@@ -1,5 +1,12 @@
 import * as tokenService from "../services/tokenService.js";
 
+const serializeBigInts = (value) =>
+  JSON.parse(
+    JSON.stringify(value, (_, nestedValue) =>
+      typeof nestedValue === "bigint" ? nestedValue.toString() : nestedValue
+    )
+  );
+
 export async function tokenizeClaim(req, res) {
   try {
     const { claimId, owner } = req.body;
@@ -12,7 +19,7 @@ export async function tokenizeClaim(req, res) {
       userWallet,
     });
 
-    res.json(token);
+    res.json(serializeBigInts(token));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -29,7 +36,7 @@ export async function transferToken(req, res) {
       userWallet,
     });
 
-    res.json(result);
+    res.json(serializeBigInts(result));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -40,7 +47,7 @@ export async function getToken(req, res) {
 
     const token = await tokenService.getTokenService(id);
 
-    res.json(token);
+    res.json(serializeBigInts(token));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

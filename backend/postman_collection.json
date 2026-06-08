@@ -103,6 +103,15 @@
       }
     },
     {
+      "name": "Register Investor",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"wallet\": \"GINVESTOR_ADDR...\",\n  \"role\": \"Investor\",\n  \"name\": \"Alpha Ventures\"\n}" },
+        "url": { "raw": "{{BASE_URL}}/api/auth/register" }
+      }
+    },
+    {
       "name": "Hospital Create Claim",
       "request": {
         "method": "POST",
@@ -125,7 +134,7 @@
       "request": {
         "method": "POST",
         "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{INVESTOR_TOKEN}}" } ],
-        "body": { "mode": "raw", "raw": "{ \"tokenId\": 1, \"newOwner\": \"GINVESTOR_ADDR...\", \"sourceAccount\": \"investor\" }" },
+        "body": { "mode": "raw", "raw": "{ \"tokenId\": 1, \"newOwner\": \"GINVESTOR_ADDR...\", \"sourceAccount\": \"hospital\" }" },
         "url": { "raw": "{{BASE_URL}}/api/marketplace/purchase" }
       }
     },

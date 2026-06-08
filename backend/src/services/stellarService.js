@@ -96,7 +96,7 @@ stellar contract invoke \
   // CLAIMS
   // =========================
 
-  async createClaim(hospitalWallet, insurerWallet, amount) {
+  async createClaim({ hospitalWallet, insurerWallet, amount }) {
     const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.registry} \
@@ -111,7 +111,7 @@ stellar contract invoke \
     return this.run(cmd);
   }
 
-  async getClaim(claimId) {
+  async getClaim({ claimId }) {
     const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.registry} \
@@ -124,11 +124,11 @@ stellar contract invoke \
     return this.run(cmd);
   }
 
-  async approveClaim(claimId) {
+  async approveClaim({ claimId }) {
     const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.registry} \
-  --source insurer \
+  --source hospital \
   --network ${NETWORK} \
   -- approve_claim \
   --claim_id ${claimId}
@@ -137,11 +137,11 @@ stellar contract invoke \
     return this.run(cmd);
   }
 
-  async rejectClaim(claimId) {
+  async rejectClaim({ claimId }) {
     const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.registry} \
-  --source insurer \
+  --source hospital \
   --network ${NETWORK} \
   -- reject_claim \
   --claim_id ${claimId}
@@ -174,11 +174,11 @@ stellar contract invoke \
   return this.run(cmd);
 }
 
-  async transferToken(tokenId, newOwner, sourceIdentity = "investor") {
+  async transferToken({ tokenId, newOwner, sourceAccount }) {
     const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.tokenization} \
-  --source ${sourceIdentity} \
+  --source ${sourceAccount} \
   --network ${NETWORK} \
   -- transfer_token \
   --token_id ${tokenId} \
@@ -205,17 +205,11 @@ stellar contract invoke \
   // SETTLEMENT
   // =========================
 
-  async settleClaim(
-    tokenId,
-    claimId,
-    payer,
-    payee,
-    amount
-  ) {
+  async settleClaim({ tokenId, claimId, payer, payee, amount }) {
     const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.settlement} \
-  --source insurer \
+  --source hospital \
   --network ${NETWORK} \
   -- settle_claim \
   --token_id ${tokenId} \
@@ -228,11 +222,11 @@ stellar contract invoke \
     return this.run(cmd);
   }
 
-  async getSettlement(tokenId) {
+  async getSettlement({ tokenId }) {
     const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.settlement} \
-  --source insurer \
+  --source hospital \
   --network ${NETWORK} \
   -- get_settlement \
   --token_id ${tokenId}
@@ -241,11 +235,11 @@ stellar contract invoke \
     return this.run(cmd);
   }
 
-  async isSettled(tokenId) {
+  async isSettled({ tokenId }) {
     const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.settlement} \
-  --source insurer \
+  --source hospital \
   --network ${NETWORK} \
   -- is_settled \
   --token_id ${tokenId}
