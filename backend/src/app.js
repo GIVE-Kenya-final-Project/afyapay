@@ -8,7 +8,8 @@ import settlementRoutes from "./routes/settlementRoutes.js";
 import marketplaceRoutes from "./routes/marketplaceRoutes.js";
 const app = express();
 
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN || "*";
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/tokens", tokenRoutes);

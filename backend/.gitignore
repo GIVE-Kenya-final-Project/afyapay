@@ -20,8 +20,8 @@ pids
 # Coverage directory
 coverage/
 
-# Prisma
-prisma/migrations/
+# Prisma (keep migrations tracked for production)
+# prisma/migrations/
 
 # Build folders
 dist/
@@ -38,6 +38,9 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Test files
+test_db.mjs
 
 # Nodemon
 .nodemon/
