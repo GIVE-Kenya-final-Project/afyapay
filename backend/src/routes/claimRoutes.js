@@ -5,10 +5,22 @@ import {
   createClaimController,
   approveClaimController,
   rejectClaimController,
+  getClaimsController,
+  getClaimController,
 } from "../controllers/claimController.js";
 
 const router = express.Router();
 
+router.get(
+  "/",
+  authMiddleware,
+  getClaimsController
+);
+router.get(
+  "/:id",
+  authMiddleware,
+  getClaimController
+);
 router.post(
   "/create",
   authMiddleware,

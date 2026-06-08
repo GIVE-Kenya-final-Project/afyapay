@@ -33,6 +33,23 @@ export const createClaimController = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+export const getClaimsController = async (req, res) => {
+  try {
+    const claims = await prisma.claim.findMany({ orderBy: { createdAt: "desc" } });
+    res.json(serializeBigInts(claims));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+export const getClaimController = async (req, res) => {
+  try {
+    const claim = await prisma.claim.findUnique({ where: { id: Number(req.params.id) } });
+    if (!claim) return res.status(404).json({ error: "Claim not found" });
+    res.json(serializeBigInts(claim));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 export const approveClaimController = async (req, res) => {
   try {
     // approveClaim now returns the updated claim record

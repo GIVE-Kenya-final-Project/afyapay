@@ -120,3 +120,6 @@ export async function getTokenService(tokenId) {
 
   return token;
 }
+export async function getAllTokensService() {
+  return prisma.claimToken.findMany({ orderBy: { createdAt: "desc" } });
+}

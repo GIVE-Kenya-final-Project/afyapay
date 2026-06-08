@@ -1,48 +1,58 @@
+import { api, getUser } from "./api";
+
+export type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 export type Claim = {
-  id: string;
-  patient: string;
-  hospital: string;
+  id: number;
+  blockchainId: string;
+  hospitalWallet: string;
+  insurerWallet: string;
   amount: number;
-  status: "Pending" | "Approved" | "Rejected" | "Tokenized";
-  tokenId?: string;
+  status: ClaimStatus;
+  createdAt: string;
 };
 
-export let claims: Claim[] = [
-  {
-    id: "AFY-1024",
-    patient: "Jean Claude",
-    hospital: "Kigali Medical Center",
-    amount: 4500,
-    status: "Pending",
-  },
-  {
-    id: "AFY-1025",
-    patient: "Diane Uwase",
-    hospital: "Rwanda Care Hospital",
-    amount: 7200,
-    status: "Pending",
-  },
-  {
-    id: "AFY-1026",
-    patient: "Eric Mutoni",
-    hospital: "Legacy Health Clinic",
-    amount: 3850,
-    status: "Approved",
-  },
-];
-export function tokenizeClaim(id: string) {
-  claims = claims.map((c) =>
-    c.id === id
-      ? { ...c, status: "Tokenized", tokenId: "TKN-" + id }
-      : c
-  );
+export type ClaimToken = {
+  id: number;
+  tokenId: string;
+  claimId: string;
+  owner: string;
+  createdAt: string;
+};
+
+export async function fetchClaims(): Promise<Claim[]> {
+  return api.get("/api/claims");
 }
-export function updateClaimStatus(
-  id: string,
-  status: Claim["status"]
-) {
-  claims = claims.map((c) =>
-    c.id === id ? { ...c, status } : c
-  );
-}   
-claims.filter((c: any) => c.status === "Approved")
+
+export async function fetchClaim(id: number): Promise<Claim> {
+  return api.get(`/api/claims/${id}`);
+}
+
+export async function createClaim(insurerWallet: string, amount: number): Promise<Claim> {
+  const user = getUser();
+  return api.post("/api/claims/create", {
+    hospitalWallet: user?.wallet,
+    insurerWallet,
+    amount,
+  });
+}
+
+export async function approveClaim(id: number): Promise<{ approval: Claim; token?: ClaimToken }> {
+  return api.post(`/api/claims/${id}/approve`, { sourceAccount: "insurer" });
+}
+
+export async function rejectClaim(id: number): Promise<Claim> {
+  return api.post(`/api/claims/${id}/reject`, { sourceAccount: "insurer" });
+}
+
+export async function purchaseToken(tokenId: number, newOwner: string): Promise<{ success: boolean; data: unknown }> {
+  return api.post("/api/marketplace/purchase", {
+    tokenId,
+    newOwner,
+    sourceAccount: "investor",
+  });
+}
+
+export async function settleClaim(tokenId: number, claimId: number, payer: string, payee: string, amount: number) {
+  return api.post("/api/settlements", { tokenId, claimId, payer, payee, amount });
+}

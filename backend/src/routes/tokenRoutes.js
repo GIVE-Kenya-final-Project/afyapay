@@ -5,6 +5,7 @@ import {
   tokenizeClaim,
   transferToken,
   getToken,
+  getAllTokens,
 } from "../controllers/tokenController.js";
 
 const router = express.Router();
@@ -20,6 +21,11 @@ router.post(
   authMiddleware,
   roleMiddleware(["Investor"]),
   transferToken
+);
+router.get(
+  "/",
+  authMiddleware,
+  getAllTokens
 );
 router.get(
   "/:id",

@@ -52,3 +52,11 @@ export async function getToken(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+export async function getAllTokens(req, res) {
+  try {
+    const tokens = await tokenService.getAllTokensService();
+    res.json(serializeBigInts(tokens));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}

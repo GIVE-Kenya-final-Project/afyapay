@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type SidebarProps = {
   role?: "hospital" | "insurer" | "investor" |"explorer" ;
@@ -11,6 +11,13 @@ export default function Sidebar({
   role = "hospital",
 }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  function handleLogout() {
+    localStorage.removeItem("afyapay_token");
+    localStorage.removeItem("afyapay_user");
+    router.push("/login");
+  }
 
   const hospitalLinks = [
     {
@@ -97,22 +104,20 @@ export default function Sidebar({
       </div>
 
       {/* FOOTER */}
-      <div className="bg-white/5 border border-white/10 p-5 rounded-3xl">
-
-        <p className="text-sm text-gray-400">
-          Blockchain Status
-        </p>
-        
-        <div className="flex items-center gap-2 mt-3">
-
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-
-          <p className="font-medium">
-            Stellar Testnet Active
-          </p>
-
+      <div className="space-y-4">
+        <div className="bg-white/5 border border-white/10 p-5 rounded-3xl">
+          <p className="text-sm text-gray-400">Blockchain Status</p>
+          <div className="flex items-center gap-2 mt-3">
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <p className="font-medium">Stellar Testnet Active</p>
+          </div>
         </div>
-
+        <button
+          onClick={handleLogout}
+          className="w-full bg-white/5 hover:bg-red-600/20 border border-white/10 p-4 rounded-3xl text-sm text-gray-400 hover:text-red-400 transition"
+        >
+          Logout
+        </button>
       </div>
     </aside>
   );

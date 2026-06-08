@@ -1,233 +1,167 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
-import { claims as initialClaims } from "../../lib/claims";
+import { fetchClaims, createClaim } from "../../lib/claims";
+import type { Claim } from "../../lib/claims";
+import { getUser } from "../../lib/api";
 
 export default function HospitalDashboard() {
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [insurerWallet, setInsurerWallet] = useState("");
+  const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [claims, setClaims] = useState(initialClaims);
+  const loadClaims = useCallback(async () => {
+    try {
+      const data = await fetchClaims();
+      setClaims(data);
+    } catch {
+      // silently fail
+    }
+  }, []);
 
-  const [form, setForm] = useState({
-    patient: "",
-    hospital: "",
-    amount: "",
-  });
+  useEffect(() => { loadClaims(); }, [loadClaims]);
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    const newClaim = {
-      id: "AFY-" + Math.floor(Math.random() * 10000),
-      patient: form.patient,
-      hospital: form.hospital,
-      amount: Number(form.amount),
-      status: "Pending" as const,
-    };
-
-    setClaims([newClaim, ...claims]);
-
-    setForm({
-      patient: "",
-      hospital: "",
-      amount: "",
-    });
+    setLoading(true);
+    try {
+      await createClaim(insurerWallet, Number(amount));
+      setInsurerWallet("");
+      setAmount("");
+      await loadClaims();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to create claim");
+    } finally {
+      setLoading(false);
+    }
   }
+
+  const user = getUser();
 
   return (
     <DashboardLayout role="hospital">
-
-      {/* HEADER */}
       <div className="flex items-center justify-between mb-10">
-
         <div>
-          <p className="text-blue-600 font-semibold">
-            Hospital Dashboard
-          </p>
-
-          <h1 className="text-4xl font-bold text-gray-900 mt-2">
-            Claims Overview
-          </h1>
+          <p className="text-blue-600 font-semibold">Hospital Dashboard</p>
+          <h1 className="text-4xl font-bold text-gray-900 mt-2">Claims Overview</h1>
         </div>
-
-        <button className="bg-blue-600 hover:bg-blue-700 transition text-white px-6 py-3 rounded-2xl font-medium shadow-lg">
-          Submit New Claim
-        </button>
-
       </div>
 
-      {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-
         <div className="bg-white rounded-3xl p-7 shadow-sm border border-gray-100">
           <p className="text-gray-500">Total Claims</p>
-          <h2 className="text-5xl font-bold mt-4 text-gray-900">
-            {claims.length}
-          </h2>
+          <h2 className="text-5xl font-bold mt-4 text-gray-900">{claims.length}</h2>
         </div>
-
         <div className="bg-white rounded-3xl p-7 shadow-sm border border-gray-100">
-          <p className="text-gray-500">Pending Settlements</p>
+          <p className="text-gray-500">Pending</p>
           <h2 className="text-5xl font-bold mt-4 text-gray-900">
-            {claims.filter(c => c.status === "Pending").length}
+            {claims.filter((c) => c.status === "PENDING").length}
           </h2>
         </div>
-
         <div className="bg-white rounded-3xl p-7 shadow-sm border border-gray-100">
-          <p className="text-gray-500">Tokenized Claims</p>
-          <h2 className="text-5xl font-bold mt-4 text-gray-900">
-            {claims.filter(c => c.status === "Tokenized").length}
+          <p className="text-gray-500">Approved</p>
+          <h2 className="text-5xl font-bold mt-4 text-green-600">
+            {claims.filter((c) => c.status === "APPROVED").length}
           </h2>
         </div>
-
       </div>
 
-      {/* SUBMIT FORM */}
       <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-10">
-
-        <h2 className="text-2xl font-bold mb-6">
-          Submit New Claim
-        </h2>
-
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-
-          <input
-            type="text"
-            name="patient"
-            placeholder="Patient Name"
-            value={form.patient}
-            onChange={handleChange}
-            className="border p-4 rounded-xl"
-            required
-          />
-
-          <input
-            type="text"
-            name="hospital"
-            placeholder="Hospital Name"
-            value={form.hospital}
-            onChange={handleChange}
-            className="border p-4 rounded-xl"
-            required
-          />
-
-          <input
-            type="number"
-            name="amount"
-            placeholder="Amount (USD)"
-            value={form.amount}
-            onChange={handleChange}
-            className="border p-4 rounded-xl"
-            required
-          />
-
+        <h2 className="text-2xl font-bold mb-6">Submit New Claim</h2>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Your Wallet</label>
+            <input
+              type="text"
+              value={user?.wallet || ""}
+              className="border p-4 rounded-xl bg-gray-50 text-gray-500 w-full"
+              disabled
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Insurer Wallet</label>
+            <input
+              type="text"
+              placeholder="G_INSURER_ADDRESS..."
+              value={insurerWallet}
+              onChange={(e) => setInsurerWallet(e.target.value)}
+              className="border p-4 rounded-xl w-full font-mono text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Amount (USD)</label>
+            <input
+              type="number"
+              placeholder="1000"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="border p-4 rounded-xl w-full"
+              required
+            />
+          </div>
           <button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 md:col-span-3"
+            disabled={loading}
+            className="bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 md:col-span-3 disabled:opacity-50"
           >
-            Submit Claim
+            {loading ? "Submitting..." : "Submit Claim"}
           </button>
-
         </form>
-
       </div>
 
-      {/* TABLE */}
       <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-
-        <div className="flex items-center justify-between mb-6">
-
-          <h2 className="text-2xl font-bold text-gray-900">
-            Recent Claims
-          </h2>
-
-        </div>
-
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Claims</h2>
         <div className="overflow-x-auto">
-
           <table className="w-full">
-
             <thead>
-
               <tr className="text-left text-gray-500 border-b border-gray-100">
-
                 <th className="pb-4">Claim ID</th>
-                <th className="pb-4">Patient</th>
-                <th className="pb-4">Hospital</th>
+                <th className="pb-4">Blockchain ID</th>
+                <th className="pb-4">Insurer</th>
                 <th className="pb-4">Amount</th>
                 <th className="pb-4">Status</th>
-
+                <th className="pb-4">Date</th>
               </tr>
-
             </thead>
-
             <tbody>
-
               {claims.map((c) => (
-
-                <tr
-                  key={c.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition"
-                >
-
-                  <td className="py-5 font-semibold text-gray-900">
-                    {c.id}
-                  </td>
-
-                  <td className="py-5 text-gray-800">
-                    {c.patient}
-                  </td>
-
-                  <td className="py-5 text-gray-800">
-                    {c.hospital}
-                  </td>
-
-                  <td className="py-5 font-semibold text-gray-900">
-                    ${c.amount}
-                  </td>
-
+                <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                  <td className="py-5 font-semibold text-gray-900">{c.id}</td>
+                  <td className="py-5 font-mono text-sm text-gray-600">{c.blockchainId}</td>
+                  <td className="py-5 font-mono text-sm text-gray-800">{c.insurerWallet.slice(0, 8)}...</td>
+                  <td className="py-5 font-semibold text-gray-900">${c.amount}</td>
                   <td className="py-5">
-
                     <span
                       className={
-                        c.status === "Pending"
+                        c.status === "PENDING"
                           ? "bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm"
-                          : c.status === "Approved"
+                          : c.status === "APPROVED"
                           ? "bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm"
-                          : c.status === "Tokenized"
-                          ? "bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm"
                           : "bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm"
                       }
                     >
                       {c.status}
                     </span>
-
                   </td>
-
+                  <td className="py-5 text-sm text-gray-500">
+                    {new Date(c.createdAt).toLocaleDateString()}
+                  </td>
                 </tr>
-
               ))}
-
+              {claims.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-gray-400">
+                    No claims yet. Submit your first claim above.
+                  </td>
+                </tr>
+              )}
             </tbody>
-
           </table>
-
         </div>
-
       </div>
-
     </DashboardLayout>
   );
 }
