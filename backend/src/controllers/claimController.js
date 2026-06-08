@@ -44,10 +44,10 @@ export const approveClaimController = async (req, res) => {
     let token;
     if (updatedClaim) {
       token = await tokenService.tokenizeClaimService({
-        claimId: updatedClaim.blockchainId,
-        owner: updatedClaim.hospitalWallet,
-        userWallet: updatedClaim.hospitalWallet,
-      });
+  claimId: Number(updatedClaim.blockchainId),
+  owner: updatedClaim.hospitalWallet,
+  userWallet: updatedClaim.hospitalWallet,
+});
     }
 
     res.json({ approval: updatedClaim, token });

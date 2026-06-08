@@ -22,17 +22,31 @@ export async function tokenizeClaimService({
 
     // 1. Call blockchain
     const result = await stellarService.tokenizeClaim({
-      claimId,
-      owner,
-      sourceAccount: userWallet,
-    });
+  claimId,
+  owner,
+  sourceAccount: userWallet,
+});
 
-    const tokenId = result?.returnValue;
+console.log("RAW RESULT:", result);
+console.log("TYPE:", typeof result);
+const tokenId = Number(result);
 
-    if (!tokenId) {
-      throw new Error("Tokenization failed: no tokenId returned from chain");
-    }
+if (isNaN(tokenId)) {
+  throw new Error(`Invalid token ID returned: ${result}`);
+}
+const existing = await prisma.claimToken.findUnique({
+  where: {
+    tokenId: Number(tokenId),
+  },
+});
 
+if (existing) {
+  return {
+    tokenId: existing.tokenId,
+    claimId: existing.claimId,
+    owner: existing.owner,
+  };
+}
     // 2. Save to DB
     const token = await prisma.claimToken.create({
       data: {
@@ -62,14 +76,17 @@ export async function tokenizeClaimService({
         },
       });
 
-      await prisma.tokenizationFailure.create({
-        data: {
-          claimId: claimId ? Number(claimId) : null,
-          tokenId: null,
-          errorMessage: error.message,
-          metadata: JSON.stringify({ attemptId: attempt.id, rawError: String(error) }),
-        },
-      });
+await prisma.tokenizationFailure.create({
+  data: {
+    claimId: claimId ? Number(claimId) : null,
+    tokenId: null,
+    errorMessage: error.message,
+    metadata: JSON.stringify({
+      attemptId: attempt.id?.toString(),
+      rawError: String(error),
+    }),
+  },
+});
     } catch (logErr) {
       console.error("Failed to log tokenization failure / attempt update:", logErr);
     }

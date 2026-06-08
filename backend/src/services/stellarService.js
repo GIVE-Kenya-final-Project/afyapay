@@ -154,19 +154,25 @@ stellar contract invoke \
   // TOKENIZATION
   // =========================
 
-  async tokenizeClaim(claimId, owner) {
-    const cmd = `
+  async tokenizeClaim({
+  claimId,
+  owner,
+  sourceAccount,
+}) {
+  const cmd = `
 stellar contract invoke \
   --id ${CONTRACTS.tokenization} \
-  --source hospital \
+  --source ${sourceAccount} \
   --network ${NETWORK} \
   -- tokenize_claim \
   --claim_id ${claimId} \
   --owner ${owner}
 `;
 
-    return this.run(cmd);
-  }
+  console.log(cmd);
+
+  return this.run(cmd);
+}
 
   async transferToken(tokenId, newOwner, sourceIdentity = "investor") {
     const cmd = `
