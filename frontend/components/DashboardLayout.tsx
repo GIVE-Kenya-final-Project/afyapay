@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import { getUser } from "../lib/api";
 
@@ -9,7 +10,11 @@ type DashboardLayoutProps = {
 };
 
 export default function DashboardLayout({ children, role }: DashboardLayoutProps) {
-  const user = getUser();
+  const [user, setUser] = useState<{ wallet: string; role: string; name: string } | null>(null);
+
+  useEffect(() => {
+    setUser(getUser());
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#F5F7FB]">
@@ -24,7 +29,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
             <div className="bg-[#0B1120] text-white px-5 py-3 rounded-2xl shadow-lg max-w-[200px]">
               <p className="text-xs text-gray-400">Wallet</p>
               <h2 className="font-bold text-sm mt-1 truncate font-mono">
-                {user?.wallet ? `${user.wallet.slice(0, 8)}...` : "Not connected"}
+                {user ? `${user.wallet.slice(0, 8)}...` : "Loading..."}
               </h2>
             </div>
             <div className="flex items-center gap-3 bg-white border border-gray-200 px-4 py-2 rounded-2xl">
