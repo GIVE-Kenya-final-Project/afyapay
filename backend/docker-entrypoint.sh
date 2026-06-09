@@ -21,7 +21,8 @@ add_key "hospital" "${STELLAR_KEY_HOSPITAL:-}"
 add_key "insurer" "${STELLAR_KEY_INSURER:-}"
 add_key "investor" "${STELLAR_KEY_INVESTOR:-}"
 
-# Apply pending Prisma migrations
+# Generate Prisma client and apply pending migrations
+npx prisma generate
 npx prisma migrate deploy 2>/dev/null || echo "No pending migrations or database already up to date"
 
 exec node src/server.js
