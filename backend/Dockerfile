@@ -1,13 +1,16 @@
-ARG STELLAR_CLI_VERSION=22.4.0
+ARG STELLAR_CLI_VERSION=26.1.0
 
-FROM rust:1.84-slim AS stellar-builder
+FROM node:20-slim AS stellar-downloader
 ARG STELLAR_CLI_VERSION
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && \
-    cargo install stellar-cli@${STELLAR_CLI_VERSION}
+RUN apt-get update && apt-get install -y curl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /tmp/stellar-cli && \
+    curl -sSfL "https://github.com/stellar/stellar-cli/releases/download/v${STELLAR_CLI_VERSION}/stellar-cli-${STELLAR_CLI_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+    | tar xz -C /tmp/stellar-cli && \
+    find /tmp/stellar-cli -type f \( -name "stellar" -o -name "stellar-cli" \) -exec cp {} /usr/local/bin/stellar \; && \
+    chmod +x /usr/local/bin/stellar
 
 FROM node:20-slim
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=stellar-builder /usr/local/cargo/bin/stellar /usr/local/bin/stellar
+COPY --from=stellar-downloader /usr/local/bin/stellar /usr/local/bin/stellar
 RUN stellar --version
 
 WORKDIR /app
